@@ -181,7 +181,9 @@ npm run package:mac
 
 ## 许可证
 
-项目所有者尚未发布许可证。在正式加入 `LICENSE` 前，仓库内容仍受默认版权规则约束。如果你准备分发衍生版本，请关注[仓库 Issues](https://github.com/nepheloovo/Kapy.ai/issues)或先联系维护者。
+Kapy.ai 以 [MIT 许可证](LICENSE)发布。
+
+内置的暮光闪闪与 Hello Kitty 角色包所描绘的角色，其名称与形象归各自权利方所有，不在 MIT 许可证授权范围内，仅供个人非商业使用。
 
 ## 文档
 

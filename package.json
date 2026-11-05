@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Kapy.ai — local-first desktop agent that turns a prompt into a reviewed, playable Web or Godot game with Codex App Server",
   "author": "Kapy.ai",
+  "license": "MIT",
   "homepage": "https://github.com/nepheloovo/Kapy.ai#readme",
   "repository": {
     "type": "git",

@@ -209,7 +209,9 @@ Contributions that make the pipeline safer, more portable or easier to extend ar
 
 ## License
 
-No project license has been published yet. Until the repository owners select and add one, the code remains under the default copyright rules. If you plan to distribute a derivative, watch [the repository issues](https://github.com/nepheloovo/Kapy.ai/issues) or contact the maintainers first.
+Kapy.ai is released under the [MIT License](LICENSE).
+
+The bundled Twilight Sparkle and Hello Kitty character packs depict characters whose names and likenesses belong to their respective rights holders. They are not covered by the MIT License and are included for personal, non-commercial use only.
 
 ## Documentation
 
