@@ -1,0 +1,21 @@
+node_modules/
+dist/
+release/
+coverage/
+*.log
+.DS_Store
+.kapy-smoke/
+
+# Local credentials and machine-specific state
+.env*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+service-account*.json
+.kapy-private/
+*.tsbuildinfo
+*.tmp
+
