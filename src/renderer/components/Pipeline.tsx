@@ -15,7 +15,7 @@ import {
   type PipelineStage,
   type ProjectStatus,
 } from '../../shared/contracts';
-import { stageProgress } from '../ui';
+import { PROJECT_STATUS_LABELS, stageProgress } from '../ui';
 
 interface PipelineProps {
   stage: PipelineStage;
@@ -51,11 +51,11 @@ export function Pipeline({ stage, status, compact = false }: PipelineProps) {
     <section className={`pipeline${compact ? ' is-compact' : ''}`} aria-label="游戏制作流程">
       <header className="section-heading pipeline-heading">
         <div>
-          <span>PRODUCTION PIPELINE</span>
+          <span>制作流程</span>
           <strong>制作进度</strong>
         </div>
         <span className={`pipeline-live status-${status}`}>
-          {status === 'running' ? 'LIVE' : status.toUpperCase()}
+          {status === 'running' ? '进行中' : PROJECT_STATUS_LABELS[status]}
         </span>
       </header>
       <ol ref={listRef}>

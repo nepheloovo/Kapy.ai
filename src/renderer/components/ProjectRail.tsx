@@ -152,7 +152,7 @@ export function ProjectRail({
                 <span className="brand-monogram" aria-hidden="true">K</span>
                 <span className="brand-copy">
                   <strong>Kapy.ai</strong>
-                  <small>AI GAME STUDIO</small>
+                  <small>AI 游戏工作室</small>
                 </span>
               </div>
             )
@@ -167,7 +167,7 @@ export function ProjectRail({
               {collapsed ? <span className="brand-monogram" aria-hidden="true">K</span> : null}
               <span className="brand-copy">
                 <strong>Kapy.ai</strong>
-                <small>AI GAME STUDIO</small>
+                <small>AI 游戏工作室</small>
               </span>
             </button>
           )}
@@ -201,7 +201,7 @@ export function ProjectRail({
         </nav>
 
         <div className="rail-section-heading">
-          <span>MY GAMES</span>
+          <span>我的游戏</span>
           <strong>{String(projects.length).padStart(2, '0')}</strong>
         </div>
 
@@ -293,7 +293,7 @@ export function ProjectRail({
             <Gauge size={15} />
             <span>
               <strong>{runtimeLabel(runtime)}</strong>
-              <small>{runtime.version ?? 'RUNTIME STATUS'}</small>
+              <small>{runtime.version ?? '运行状态'}</small>
             </span>
             <i className={`runtime-dot state-${runtime.state}`} />
           </button>

@@ -36,6 +36,8 @@ import type {
   ProjectInspectorPayload,
   ProjectIconData,
   ProjectRecord,
+  ProjectUndoPreview,
+  ProjectUndoResult,
   ProjectStatus,
   RunProjectInput,
   RuntimeStatus,
@@ -113,6 +115,8 @@ import {
   resolveExistingProjectDirectory,
 } from './projectStore.js';
 import { PromptTemplateStore } from './promptTemplateStore.js';
+import { classifyQuickEdit } from './quickEditClassifier.js';
+import { WorkspaceSnapshotStore } from './workspaceSnapshots.js';
 import { verifyVisualAssetCoverage } from './visualAssetCoverage.js';
 import { verifyWebProductionBuild } from './webProductionBuild.js';
 import {
@@ -158,6 +162,9 @@ let mediaGenerationService: MediaGenerationService;
 let mcpConfigManager: McpConfigManager;
 let promptTemplateStore: PromptTemplateStore;
 let imageGenerationAttestations: ImageGenerationAttestationStore;
+let workspaceSnapshots: WorkspaceSnapshotStore;
+/** Projects whose files were restored to a save point since their last AI run. */
+const restoredProjects = new Set<string>();
 let mainWindow: BrowserWindow | null = null;
 let shuttingDown = false;
 const mediaProviderTests = new Map<MediaCapability, MediaProviderTestResult>();
@@ -209,6 +216,7 @@ async function launch(): Promise<void> {
   });
   eventLog = new EventLog(join(userData, 'events'));
   assetPlanStore = new AssetPlanStore(join(userData, 'asset-plans.json'));
+  workspaceSnapshots = new WorkspaceSnapshotStore({ directory: join(userData, 'snapshots') });
   godotEnvironmentService = new GodotEnvironmentService({
     storageFile: join(userData, 'godot-environment.json'),
   });
@@ -627,6 +635,7 @@ function bindIpc(): void {
         eventLog.remove(project.id),
         assetPlanStore.removeProject(project.id),
         imageGenerationAttestations.removeProject(project.id),
+        workspaceSnapshots.removeProject(project.id),
       ]);
       if (process.env.KAPY_DEBUG === '1') {
         cleanup.forEach((result) => {
@@ -688,6 +697,17 @@ function bindIpc(): void {
         miniMaxMusicRequired,
       );
       const promptAdditions = await promptTemplateStore.enabledAdditions();
+      const workspaceRestored = restoredProjects.has(project.id);
+      const quickEdit = classifyQuickEdit({
+        prompt: input.prompt,
+        hasImplementerThread: Boolean(
+          reusableImplementerThreadId(project.threadId, project.toolsetVersion),
+        ),
+        lastStatus: project.status,
+        imageRequirement: imageGenerationRequirement,
+        audioRequirement: audioGenerationRequirement,
+        workspaceRestored,
+      });
       const prepared = await updateProject(project.id, {
         model,
         lastError: null,
@@ -709,6 +729,11 @@ function bindIpc(): void {
       await archiveLatestGameplayExperienceReport(prepared.root).catch((error) => {
         throw new Error(`无法归档上一轮体验评测：${asError(error).message}`);
       });
+      // Save point for "回到上一版". A failed save point is reported but does
+      // not block the run.
+      const savePointWarning = await workspaceSnapshots
+        .create(prepared.id, prepared.root, 'before-run', input.prompt)
+        .then(() => null, (error) => asError(error).message);
       const running = await updateProject(project.id, {
         status: 'running',
         stage: 'brief',
@@ -725,10 +750,26 @@ function bindIpc(): void {
         timestamp: new Date().toISOString(),
         method: 'harness/user-request',
       });
+      if (savePointWarning) {
+        emitAgentEvent({
+          id: randomUUID(),
+          projectId: project.id,
+          kind: 'error',
+          title: '存档 · 没能自动保存',
+          message: `这次修改前没能自动保存当前版本，修改后可能无法用“回到上一版”撤回：${savePointWarning}`,
+          stage: running.stage,
+          timestamp: new Date().toISOString(),
+          method: 'snapshot/create-failed',
+        });
+      }
+      restoredProjects.delete(project.id);
+      const harnessPrompt = workspaceRestored
+        ? `<workspace_restored>The user restored the game files to an earlier save point after your last turn, so the workspace may not match what you remember. Inspect the current files before relying on earlier context.</workspace_restored>\n\n${input.prompt.trim()}`
+        : input.prompt.trim();
       trackBackgroundRun(
         executeHarness(
           running,
-          input.prompt.trim(),
+          harnessPrompt,
           model,
           input.effort ?? settings.defaultEffort,
           imageGenerationSkill,
@@ -737,6 +778,7 @@ function bindIpc(): void {
           targetFrameRate,
           imageProvider ? 'configured-api' : 'codex-imagegen',
           promptAdditions,
+          quickEdit.quick,
         ),
       );
       return running;
@@ -902,6 +944,42 @@ function bindIpc(): void {
   handle('kapy:project:experience:cancel', (_event, projectId: string) => {
     const id = validateProjectId(projectId);
     manualExperienceControllers.get(id)?.abort();
+  });
+  handle('kapy:project:undo:peek', async (_event, projectId: string): Promise<ProjectUndoPreview | null> => {
+    const id = validateProjectId(projectId);
+    const snapshot = await workspaceSnapshots.nextUndo(id);
+    return snapshot ? { label: snapshot.label, createdAt: snapshot.createdAt } : null;
+  });
+  handle('kapy:project:undo', async (_event, projectId: string): Promise<ProjectUndoResult> => {
+    const id = validateProjectId(projectId);
+    if (isProjectBusyForMutation(id)) {
+      throw new Error('Agent 正在修改这个游戏，请等当前任务结束后再回到上一版');
+    }
+    const release = acquireProjectFilesystemAccess(id);
+    projectRunReservations.add(id);
+    try {
+      const stored = await projectStore.get(id);
+      const project = await ensureProjectLocation(stored, { ignoreRunReservation: true });
+      if (!project) throw new Error('尚未重新连接项目文件夹，没有回到上一版。');
+      await Promise.allSettled([previews.stop(project.id), playtestPreviews.stop(project.id)]);
+      const restored = await workspaceSnapshots.undo(project.id, project.root);
+      restoredProjects.add(project.id);
+      emitAgentEvent({
+        id: randomUUID(),
+        projectId: project.id,
+        kind: 'lifecycle',
+        title: '存档 · 已回到上一版',
+        message: `已撤回“${restored.label}”这次修改，游戏文件恢复到修改之前。撤回前的版本也已自动保存。`,
+        stage: project.stage,
+        timestamp: new Date().toISOString(),
+        method: 'snapshot/undo',
+      });
+      const updated = await updateProject(project.id, { lastError: null });
+      return { project: updated, restored: { label: restored.label, createdAt: restored.createdAt } };
+    } finally {
+      projectRunReservations.delete(id);
+      release();
+    }
   });
   handle('kapy:project:read', async (_event, projectId: string, relativePath: string) => {
     const id = validateProjectId(projectId);
@@ -1417,6 +1495,7 @@ async function executeHarness(
   targetFrameRate: ProjectRecord['targetFrameRate'],
   imageGenerationRoute: 'configured-api' | 'codex-imagegen',
   promptAdditions: Parameters<GameHarness['run']>[0]['promptAdditions'],
+  quickEdit: boolean,
 ): Promise<void> {
   try {
     const result = await harness.run({
@@ -1433,6 +1512,7 @@ async function executeHarness(
       imageGenerationRoute,
       targetFrameRate,
       promptAdditions,
+      quickEdit,
       refreshImageGenerationRequirement: async () => {
         await waitForAssetIngestions(project.id);
         return resolveHostImageGenerationRequirement(project);

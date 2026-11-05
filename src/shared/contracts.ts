@@ -308,6 +308,18 @@ export interface RunProjectInput {
   effort?: string | null;
 }
 
+/** The save point that "回到上一版" would restore. */
+export interface ProjectUndoPreview {
+  /** The request whose changes would be undone. */
+  label: string;
+  createdAt: string;
+}
+
+export interface ProjectUndoResult {
+  project: ProjectRecord;
+  restored: ProjectUndoPreview;
+}
+
 export interface FileNode {
   name: string;
   relativePath: string;
@@ -579,6 +591,10 @@ export interface KapyApi {
   evaluateProjectExperience(projectId: string): Promise<GameplayExperienceReport>;
   /** Cancels a manually requested experience playtest, if one is active. */
   cancelProjectExperience(projectId: string): Promise<void>;
+  /** The change that "回到上一版" would undo, or null when nothing can be undone. */
+  peekProjectUndo(projectId: string): Promise<ProjectUndoPreview | null>;
+  /** Restores the files from before the latest AI run; current files are saved first. */
+  undoProjectChange(projectId: string): Promise<ProjectUndoResult>;
   readProjectFile(projectId: string, relativePath: string): Promise<FileReadResult>;
   /** Returns the project icon as a PNG data URL, or null when no icon exists yet. */
   getProjectIcon(projectId: string): Promise<ProjectIconData | null>;

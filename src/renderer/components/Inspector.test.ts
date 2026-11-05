@@ -41,7 +41,7 @@ describe('ExperienceReport', () => {
     expect(markup).toContain('experience-report-trigger is-pass');
     expect(markup).toContain('aria-expanded="false"');
     expect(markup).toContain('100');
-    expect(markup).toContain('PASS');
+    expect(markup).toContain('通过');
     expect(markup).not.toContain('加载与启动');
     expect(markup).not.toContain('artifacts/playtest/latest/report.json');
   });
@@ -85,6 +85,6 @@ describe('ExperienceReport', () => {
     }));
 
     expect(markup).toContain('试玩通过 · 项目仍需处理');
-    expect(markup).toContain('PASS');
+    expect(markup).toContain('通过');
   });
 });

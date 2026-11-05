@@ -102,7 +102,18 @@ describe('game harness required ImageGen contract', () => {
     })).resolves.toMatchObject({ repaired: true });
 
     expect(runtime.turns).toHaveLength(5);
-    for (const turn of runtime.turns) {
+    // Turns: planner, implementer, reviewer, repair (implementer thread), re-review (reviewer thread).
+    // Each thread gets the full fixed contracts on its first turn only.
+    for (const turn of runtime.turns.slice(3)) {
+      expect(turn.prompt).toContain('<host_contracts_reminder fps="120" image_route="codex-imagegen">');
+      expect(turn.prompt).toContain('<host_attestation status="missing">');
+      expect(turn.prompt).toContain('MUST invoke $imagegen during this run');
+      expect(turn.prompt).toContain('<host_audio_attestation status="not-required">');
+      expect(turn.prompt).not.toContain('<animation_needs_contract>');
+      expect(turn.prompt).not.toContain('<experience_playtest_contract');
+      expect(turn.prompt.length).toBeLessThan(runtime.turns[0]!.prompt.length / 4);
+    }
+    for (const turn of runtime.turns.slice(0, 3)) {
       expect(turn.prompt).toContain('<required_image_generation>');
       expect(turn.prompt).toContain('<host_attestation status="missing">');
       expect(turn.prompt).toContain('MUST invoke $imagegen during this run');
@@ -208,7 +219,7 @@ describe('game harness required ImageGen contract', () => {
       cwd: '/tmp/project-repair-exhausted',
       prompt: 'Build a game.',
       imageGenerationSkill: { name: 'imagegen', path: '/tmp/imagegen/SKILL.md' },
-    })).rejects.toThrow(`Repair limit reached after ${MAX_GAME_HARNESS_REPAIR_ATTEMPTS} attempts`);
+    })).rejects.toThrow(`已返修 ${MAX_GAME_HARNESS_REPAIR_ATTEMPTS} 次仍未通过`);
 
     expect(runtime.turns).toHaveLength(9);
     expect([runtime.turns[3]?.threadId, runtime.turns[5]?.threadId, runtime.turns[7]?.threadId])
@@ -660,5 +671,226 @@ describe('game harness required ImageGen contract', () => {
     expect(prompt).toContain('public/assets/images/hero.png');
     expect(prompt).toContain('a new image is not required');
     expect(prompt).not.toContain('MUST invoke $imagegen during this run');
+  });
+});
+
+class ScriptedRuntime extends CapturingRuntime {
+  readonly interrupts: string[] = [];
+  /** Turn indexes (0-based) that never complete until interrupted. */
+  readonly hangTurns: Set<number>;
+  /** Turn indexes that first raise an approval request, then complete later. */
+  readonly approvalTurns: Map<number, number>;
+
+  constructor(responses: string[], hangTurns: number[] = [], approvalTurns: Array<[number, number]> = []) {
+    super(responses);
+    this.hangTurns = new Set(hangTurns);
+    this.approvalTurns = new Map(approvalTurns);
+  }
+
+  override async startTurn(options: StartTurnOptions): Promise<string> {
+    const index = this.turns.length;
+    if (this.hangTurns.has(index)) {
+      this.turns.push(structuredClone(options));
+      return `turn-${index + 1}`;
+    }
+    const delayMs = this.approvalTurns.get(index);
+    if (delayMs !== undefined) {
+      this.turns.push(structuredClone(options));
+      const turnId = `turn-${index + 1}`;
+      const text = this.responses[index] ?? '';
+      queueMicrotask(() => this.emit('serverRequest', { id: 1, method: 'item/commandExecution/requestApproval', params: { threadId: options.threadId, turnId } }));
+      setTimeout(() => {
+        this.emit('notification', { method: 'item/completed', params: { threadId: options.threadId, turnId, item: { type: 'agentMessage', text } } });
+        this.emit('notification', { method: 'turn/completed', params: { threadId: options.threadId, turnId, turn: { id: turnId, status: 'completed' } } });
+      }, delayMs);
+      return turnId;
+    }
+    return super.startTurn(options);
+  }
+
+  override async interruptTurn(threadId: string, turnId: string): Promise<void> {
+    this.interrupts.push(turnId);
+    // Like the real App Server, report the interrupted turn as completed
+    // before the interrupt request itself returns.
+    this.emit('notification', {
+      method: 'turn/completed',
+      params: { threadId, turnId, turn: { id: turnId, status: 'interrupted' } },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+}
+
+describe('game harness batch 1 improvements', () => {
+  const trustedImage = { state: 'trusted-and-referenced', relativePath: 'public/assets/images/hero.png' } as const;
+
+  it('quick edit skips the Planner and Reviewer and finishes after the host playtest passes', async () => {
+    const runtime = new CapturingRuntime(['把开始按钮改成了红色。']);
+    const harness = new GameHarness(runtime as unknown as CodexAppServer);
+    const events: Array<{ title: string; method: string }> = [];
+    harness.on('event', (event: { title: string; method: string }) => events.push(event));
+    let hostChecks = 0;
+
+    const result = await harness.run({
+      projectId: 'quick-1',
+      cwd: '/tmp/quick-1',
+      prompt: '把开始按钮改成红色',
+      threadId: 'existing-implementer',
+      quickEdit: true,
+      imageGenerationRequirement: trustedImage,
+      imageGenerationSkill: { name: 'imagegen', path: '/tmp/imagegen/SKILL.md' },
+      validateHostDelivery: async () => {
+        hostChecks += 1;
+        return { ok: true, findings: [] };
+      },
+    });
+
+    expect(runtime.threads).toHaveLength(0);
+    expect(runtime.turns).toHaveLength(1);
+    expect(runtime.turns[0]!.threadId).toBe('existing-implementer');
+    expect(runtime.turns[0]!.prompt).toContain('small, focused change');
+    expect(runtime.turns[0]!.prompt).toContain('<host_contracts_reminder');
+    expect(runtime.turns[0]!.prompt).toContain('<host_attestation status="trusted-and-referenced">');
+    expect(runtime.turns[0]!.prompt).not.toContain('<animation_needs_contract>');
+    expect(hostChecks).toBe(1);
+    expect(result.review.verdict).toBe('pass');
+    expect(result.planner.status).toBe('skipped');
+    expect(events.map((event) => event.method)).toContain('harness/run/quick-edit');
+    expect(events.at(-1)?.title).toBe('交付 · 全部检查通过');
+  });
+
+  it('quick edit falls back to repair and an independent Reviewer when the host playtest fails', async () => {
+    const runtime = new CapturingRuntime([
+      '改了按钮颜色。',
+      '修好了重新开始。',
+      JSON.stringify({ verdict: 'pass', summary: '通过', findings: [] }),
+    ]);
+    const harness = new GameHarness(runtime as unknown as CodexAppServer);
+    const host = [
+      { ok: false, findings: ['重新开始按钮没有反应'] },
+      { ok: true, findings: [] },
+    ];
+
+    const result = await harness.run({
+      projectId: 'quick-2',
+      cwd: '/tmp/quick-2',
+      prompt: '把开始按钮改成红色',
+      threadId: 'existing-implementer',
+      quickEdit: true,
+      imageGenerationRequirement: trustedImage,
+      imageGenerationSkill: { name: 'imagegen', path: '/tmp/imagegen/SKILL.md' },
+      validateHostDelivery: async () => host.shift() ?? { ok: true, findings: [] },
+    });
+
+    expect(runtime.turns.map((turn) => turn.threadId)).toEqual([
+      'existing-implementer',
+      'existing-implementer',
+      'thread-1',
+    ]);
+    expect(runtime.threads[0]!.developerInstructions).toContain('You are the Reviewer');
+    expect(runtime.turns[1]!.prompt).toContain('重新开始按钮没有反应');
+    // The Reviewer thread is new in this run, so it gets the full contracts once.
+    expect(runtime.turns[2]!.prompt).toContain('<animation_needs_contract>');
+    expect(result.repairAttempts).toBe(1);
+  });
+
+  it('ignores the quick-edit flag for a game without an existing Implementer thread', async () => {
+    const runtime = new CapturingRuntime([
+      'Plan.',
+      'Built.',
+      JSON.stringify({ verdict: 'pass', summary: 'ok', findings: [] }),
+    ]);
+    const harness = new GameHarness(runtime as unknown as CodexAppServer);
+    await harness.run({
+      projectId: 'quick-3',
+      cwd: '/tmp/quick-3',
+      prompt: '把开始按钮改成红色',
+      quickEdit: true,
+      imageGenerationSkill: { name: 'imagegen', path: '/tmp/imagegen/SKILL.md' },
+    });
+    expect(runtime.threads[0]!.developerInstructions).toContain('You are the Planner');
+    expect(runtime.turns).toHaveLength(3);
+  });
+
+  it('asks every role to answer the user in Simplified Chinese', async () => {
+    const runtime = new CapturingRuntime([
+      'Plan.',
+      'Built.',
+      JSON.stringify({ verdict: 'pass', summary: 'ok', findings: [] }),
+    ]);
+    const harness = new GameHarness(runtime as unknown as CodexAppServer);
+    await harness.run({
+      projectId: 'zh-1',
+      cwd: '/tmp/zh-1',
+      prompt: 'Build a game.',
+      imageGenerationSkill: { name: 'imagegen', path: '/tmp/imagegen/SKILL.md' },
+    });
+    expect(runtime.threads).toHaveLength(3);
+    for (const thread of runtime.threads) {
+      expect(thread.developerInstructions).toContain('in Simplified Chinese');
+      expect(thread.developerInstructions).toContain('"pass" and "repair" exactly as they are');
+    }
+  });
+
+  it('warns when a turn goes quiet, interrupts it, and retries once on the same thread', async () => {
+    const runtime = new ScriptedRuntime(['', 'Plan after retry.', 'Built.', JSON.stringify({ verdict: 'pass', summary: 'ok', findings: [] })], [0]);
+    const harness = new GameHarness(runtime as unknown as CodexAppServer, {
+      stallWarningMs: 40,
+      stallRetryMs: 120,
+      stallCheckIntervalMs: 10,
+    });
+    const methods: string[] = [];
+    harness.on('event', (event: { method: string }) => methods.push(event.method));
+
+    await harness.run({
+      projectId: 'stall-1',
+      cwd: '/tmp/stall-1',
+      prompt: 'Build a game.',
+      imageGenerationSkill: { name: 'imagegen', path: '/tmp/imagegen/SKILL.md' },
+    });
+
+    expect(runtime.interrupts).toEqual(['turn-1']);
+    expect(runtime.turns[1]!.threadId).toBe(runtime.turns[0]!.threadId);
+    expect(runtime.turns[1]!.prompt).toContain('<stall_recovery>');
+    expect(methods.indexOf('harness/turn/stall-warning')).toBeGreaterThan(-1);
+    expect(methods.indexOf('harness/turn/stall-warning')).toBeLessThan(methods.indexOf('harness/turn/stall-retry'));
+  });
+
+  it('stops with a clear Chinese message when the retry also goes quiet', async () => {
+    const runtime = new ScriptedRuntime([], [0, 1]);
+    const harness = new GameHarness(runtime as unknown as CodexAppServer, {
+      stallWarningMs: 20,
+      stallRetryMs: 60,
+      stallCheckIntervalMs: 10,
+    });
+    await expect(harness.run({
+      projectId: 'stall-2',
+      cwd: '/tmp/stall-2',
+      prompt: 'Build a game.',
+      imageGenerationSkill: { name: 'imagegen', path: '/tmp/imagegen/SKILL.md' },
+    })).rejects.toThrow('连续两次长时间没有响应');
+    expect(runtime.interrupts).toEqual(['turn-1', 'turn-2']);
+  });
+
+  it('does not treat waiting for a user approval as a stall', async () => {
+    const runtime = new ScriptedRuntime(
+      ['Plan.', 'Built.', JSON.stringify({ verdict: 'pass', summary: 'ok', findings: [] })],
+      [],
+      [[1, 200]],
+    );
+    const harness = new GameHarness(runtime as unknown as CodexAppServer, {
+      stallWarningMs: 30,
+      stallRetryMs: 80,
+      stallCheckIntervalMs: 10,
+    });
+    const methods: string[] = [];
+    harness.on('event', (event: { method: string }) => methods.push(event.method));
+    await harness.run({
+      projectId: 'stall-3',
+      cwd: '/tmp/stall-3',
+      prompt: 'Build a game.',
+      imageGenerationSkill: { name: 'imagegen', path: '/tmp/imagegen/SKILL.md' },
+    });
+    expect(runtime.interrupts).toEqual([]);
+    expect(methods).not.toContain('harness/turn/stall-warning');
   });
 });

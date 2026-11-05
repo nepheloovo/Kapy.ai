@@ -725,7 +725,7 @@ export function SkillsSettings({ controller }: { controller: ExtensionSettingsCo
           <div>
             <strong>{item.name}</strong>
             <span className={`source-badge source-${item.source}`}>{sourceLabel(item.source)}</span>
-            {requiredByKapy ? <span className="source-badge kapy-required-badge">KAPY REQUIRED</span> : null}
+            {requiredByKapy ? <span className="source-badge kapy-required-badge">Kapy 必需</span> : null}
           </div>
           <p>{requiredByKapy ? 'Kapy 的默认图片生成与 API 失败回退依赖此 Skill；游戏制作流程中始终保持启用。' : item.description || '此 Skill 未提供说明。'}</p>
           {item.path ? <code title={item.path}>{item.path}</code> : null}
@@ -890,12 +890,12 @@ function McpEditor({ value, busy, onChange, onCancel, onSave }: {
 }) {
   return (
     <div className="mcp-editor">
-      <header><div><span>SERVER CONFIG</span><strong>{value.originalId ? '编辑 MCP Server' : '添加 MCP Server'}</strong></div><span className="draft-badge">DRAFT</span></header>
+      <header><div><span>服务配置</span><strong>{value.originalId ? '编辑 MCP Server' : '添加 MCP Server'}</strong></div><span className="draft-badge">草稿</span></header>
       <div className="mcp-editor-grid">
         <label><span>名称</span><input autoFocus disabled={Boolean(value.originalId)} value={value.name} placeholder="例如：blender" onChange={(event) => onChange({ ...value, name: event.target.value })} /></label>
-        <label><span>Transport</span><select value={value.transport} onChange={(event) => onChange({ ...value, transport: event.target.value as McpDraft['transport'], target: '', args: '' })}><option value="stdio">STDIO</option><option value="http">HTTP</option></select></label>
+        <label><span>连接方式</span><select value={value.transport} onChange={(event) => onChange({ ...value, transport: event.target.value as McpDraft['transport'], target: '', args: '' })}><option value="stdio">STDIO</option><option value="http">HTTP</option></select></label>
         <label className="mcp-target"><span>{value.transport === 'stdio' ? 'Command' : 'URL'}</span><input value={value.target} placeholder={value.transport === 'stdio' ? 'npx' : 'https://mcp.example.com'} onChange={(event) => onChange({ ...value, target: event.target.value })} /></label>
-        {value.transport === 'stdio' ? <label className="mcp-target"><span>Arguments · 每行一个</span><textarea rows={3} value={value.args} placeholder={'--workspace\n/path/to/project'} onChange={(event) => onChange({ ...value, args: event.target.value })} /></label> : null}
+        {value.transport === 'stdio' ? <label className="mcp-target"><span>启动参数 · 每行一个</span><textarea rows={3} value={value.args} placeholder={'--workspace\n/path/to/project'} onChange={(event) => onChange({ ...value, args: event.target.value })} /></label> : null}
         {value.transport === 'http' ? <label className="mcp-target"><span>Bearer Token 环境变量名</span><input spellCheck={false} value={value.bearerTokenEnvVar} placeholder="例如：MY_MCP_BEARER_TOKEN" onChange={(event) => onChange({ ...value, bearerTokenEnvVar: event.target.value })} /><small>这里只保存变量名；Token 明文不会进入 Renderer 或 IPC。</small></label> : null}
       </div>
       <footer>
@@ -1006,7 +1006,7 @@ export function PromptSettings({
             </footer>
           </div>
         </div>
-      ) : <EmptyExtensionState icon={FileCode2} title="尚无提示词模板" description="Host Bridge 接通后会提供 System、Planner、Implementer 与 Reviewer 默认模板。" />}
+      ) : <EmptyExtensionState icon={FileCode2} title="尚无提示词模板" description="Host Bridge 接通后会提供系统、策划、程序与质检默认模板。" />}
     </section>
   );
 }
@@ -1029,9 +1029,9 @@ function EmptyExtensionState({ icon: Icon, title, description }: { icon: LucideI
 }
 
 function capabilityDefinition(capability: MediaCapability): { kicker: string; title: string; icon: LucideIcon } {
-  if (capability === 'image') return { kicker: 'VISUAL ASSET SERVICE', title: '图像生成', icon: Image };
-  if (capability === 'audio') return { kicker: 'VOICE · SFX · MUSIC', title: '音频与音效', icon: Music2 };
-  return { kicker: 'MESH · TEXTURE · GLB', title: '3D 模型', icon: Box };
+  if (capability === 'image') return { kicker: '图像素材服务', title: '图像生成', icon: Image };
+  if (capability === 'audio') return { kicker: '语音 · 音效 · 音乐', title: '音频与音效', icon: Music2 };
+  return { kicker: '模型 · 贴图 · GLB', title: '3D 模型', icon: Box };
 }
 
 function normalizeSnapshot(value: ExtensionSettingsSnapshot): ExtensionSettingsSnapshot {
@@ -1061,7 +1061,7 @@ function unsupported(onMessage: (message: string) => void): Promise<void> {
 }
 
 function sourceLabel(source: SkillSetting['source']): string {
-  return { 'built-in': 'BUILT-IN', user: 'USER', plugin: 'PLUGIN', workspace: 'WORKSPACE' }[source];
+  return { 'built-in': '内置', user: '用户', plugin: '插件', workspace: '工作区' }[source];
 }
 
 function mcpStatusLabel(status: McpServerSetting['status']): string {
@@ -1069,7 +1069,7 @@ function mcpStatusLabel(status: McpServerSetting['status']): string {
 }
 
 function promptRoleLabel(role: PromptTemplateId): string {
-  return { planner: 'Planner', implementer: 'Implementer', reviewer: 'Reviewer', repair: 'Repair' }[role];
+  return { planner: '策划', implementer: '程序', reviewer: '质检', repair: '返修' }[role];
 }
 
 function emptyMcpDraft(): McpDraft {

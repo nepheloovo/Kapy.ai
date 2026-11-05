@@ -372,10 +372,10 @@ export function Inspector({
       <div className="inspector-toolbar">
         <span>
           {tab === 'preview'
-            ? showProductionScene ? 'KAPY PRODUCTION STUDIO' : 'LOCAL GAME PREVIEW'
+            ? showProductionScene ? 'Kapy 制作工作室' : '本地游戏预览'
             : tab === 'assets'
-              ? 'GAME ASSET LIBRARY'
-              : 'PROJECT FILES'}
+              ? '游戏素材库'
+              : '项目文件'}
         </span>
         <div className="inspector-toolbar-actions">
           {tab === 'preview' && showExperienceReport ? (
@@ -415,7 +415,7 @@ export function Inspector({
               <div className="inspector-solo-indicator" aria-label={`单人搭档：${resolvedKapyPack?.avatarLabel ?? 'Kapy'}`}>
                 {resolvedKapyPack ? <img src={resolvedKapyPack.avatarImage} alt="" draggable={false} /> : null}
                 <span>
-                  <small>SOLO</small>
+                  <small>单人</small>
                   <strong>单人</strong>
                 </span>
               </div>
@@ -481,7 +481,7 @@ export function Inspector({
         >
           <header>
             <div>
-              <small>PROJECT CREW</small>
+              <small>项目编队</small>
               <strong>项目制作编队</strong>
               <span>{project.kapyCrewOverride === null ? '当前跟随全局默认编队' : '当前使用项目专属编队'}</span>
             </div>
@@ -684,12 +684,12 @@ export function ExperienceReportTrigger({
   const tone = evaluating ? 'running' : report?.verdict ?? 'waiting';
   const presentation = experienceReportPresentation(report, projectStatus);
   const status = evaluating
-    ? 'RUNNING'
+    ? '进行中'
     : report?.verdict === 'pass'
-      ? 'PASS'
+      ? '通过'
       : report?.verdict === 'repair'
-        ? 'REPAIR'
-        : 'WAITING';
+        ? '需返修'
+        : '等待中';
 
   return (
     <button
@@ -701,7 +701,7 @@ export function ExperienceReportTrigger({
       title={`${expanded ? '收起' : '展开'}${presentation.title}`}
       onClick={onToggle}
     >
-      <span>PLAYTEST</span>
+      <span>自动试玩</span>
       {score === null
         ? <CircleDashed size={11} className={evaluating ? 'spin' : ''} aria-hidden="true" />
         : <strong>{score}</strong>}
@@ -734,17 +734,17 @@ export function ExperienceReport({
   const score = report ? Math.max(0, Math.min(100, Math.round(report.score))) : null;
   const tone = evaluating ? 'running' : report?.verdict ?? 'waiting';
   const status = evaluating
-    ? 'RUNNING'
+    ? '进行中'
     : report?.verdict === 'pass'
-      ? 'PASS'
+      ? '通过'
       : report?.verdict === 'repair'
-        ? 'REPAIR'
-        : 'WAITING';
+        ? '需返修'
+        : '等待中';
 
   const header = (
     <header className="experience-report-header">
       <div>
-        <span>{presentation.historical ? 'LAST PLAYTEST / EXPERIENCE' : 'PLAYTEST / EXPERIENCE'}</span>
+        <span>{presentation.historical ? '上次试玩 / 体验' : '试玩 / 体验'}</span>
         <strong>{presentation.title}</strong>
       </div>
       <div className="experience-report-actions">
@@ -836,7 +836,7 @@ export function ExperienceReport({
         {presentation.overallFailureAfterPassingPlaytest ? (
           <p className="experience-status-context is-attention">
             <Info size={12} aria-hidden="true" />
-            自动试玩已经通过，但项目整体仍未通过 Reviewer 或其他交付检查；请结合左侧失败事件继续处理。
+            自动试玩已经通过，但项目整体仍未通过质检或其他交付检查；请结合左侧失败事件继续处理。
           </p>
         ) : presentation.historical ? (
           <p className="experience-status-context">
@@ -890,10 +890,10 @@ export function shouldShowExperienceReport(
 
 function ExperienceCheckRow({ check }: { check: GameplayExperienceCheck }) {
   const statusLabel = check.status === 'pass'
-    ? 'PASS'
+    ? '通过'
     : check.status === 'repair'
-      ? 'REPAIR'
-      : 'SKIPPED';
+      ? '需返修'
+      : '已跳过';
 
   return (
     <div
@@ -1208,7 +1208,7 @@ function AssetPlanCard({
       <div className="asset-plan-body">
         <header>
           <span className="asset-plan-status"><CircleDashed size={11} /> {status.label}</span>
-          <small>{plan.required ? 'REQUIRED' : 'OPTIONAL'}</small>
+          <small>{plan.required ? '必需' : '可选'}</small>
         </header>
         <strong title={plan.name}>{plan.name}</strong>
         <p>{status.detail}</p>

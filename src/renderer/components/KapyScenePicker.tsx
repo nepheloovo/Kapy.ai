@@ -36,7 +36,7 @@ export const KAPY_SOLO_SCENE_OPTIONS: readonly KapySceneOption<KapyPackId>[] =
 export const KAPY_SCENE_OPTIONS: readonly KapySceneOption<KapySceneId>[] = [
   {
     id: 'collaboration',
-    eyebrow: 'COLLABORATION WORKSHOP',
+    eyebrow: '多人场景 · 01',
     name: '协作工坊',
     description: '伙伴会按照岗位在策划、美术、工程与测试工位之间协作。',
     image: collaborationScene,
@@ -45,7 +45,7 @@ export const KAPY_SCENE_OPTIONS: readonly KapySceneOption<KapySceneId>[] = [
   },
   {
     id: 'fishing',
-    eyebrow: 'POND RETREAT',
+    eyebrow: '多人场景 · 02',
     name: '荷塘钓鱼',
     description: '流水、游鱼与随风花草组成的四人钓鱼休憩场景。',
     image: fishingScene,
@@ -157,7 +157,7 @@ function KapyScenePickerShell<Id extends string>({
       <header className="kapy-scene-heading">
         <span className="kapy-scene-heading-icon" aria-hidden="true"><MonitorPlay size={18} /></span>
         <div>
-          <small>{solo ? '02 / SOLO WORKSPACE' : 'MULTIPLAYER STAGE'}</small>
+          <small>{solo ? '02 / 单人工作室' : '多人舞台'}</small>
           <strong>{solo ? '再选择一个单人工作室' : '最后选择多人工作的舞台'}</strong>
           <p>{solo
             ? '场景与角色互相独立；任何角色都可以进入任意一个工作室。'
@@ -197,7 +197,7 @@ function KapyScenePickerShell<Id extends string>({
                   draggable={false}
                 />
                 <span className="kapy-scene-live-badge">
-                  <i /> {solo ? 'SOLO MAP' : option.animated ? 'LIVE LOOP' : 'CREW MAP'}
+                  <i /> {solo ? '单人地图' : option.animated ? '动态场景' : '编队地图'}
                 </span>
               </span>
               <span className="kapy-pack-card-copy kapy-scene-card-copy">

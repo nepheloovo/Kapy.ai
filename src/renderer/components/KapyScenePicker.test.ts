@@ -46,7 +46,7 @@ describe('KapyScenePicker', () => {
     expect(markup).toMatch(
       /<button[^>]*aria-checked="true"[^>]*data-scene-id="fishing"[^>]*data-motion="animated"/u,
     );
-    expect(markup).toContain('POND RETREAT');
+    expect(markup).toContain('多人场景 · 02');
     expect(markup).toContain('荷塘钓鱼');
     expect(markup).toContain('动态循环');
     expect(markup).toContain('固定四人');

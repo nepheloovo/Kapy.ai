@@ -26,6 +26,8 @@ import type {
   ProjectInspectorPayload,
   ProjectIconData,
   ProjectRecord,
+  ProjectUndoPreview,
+  ProjectUndoResult,
   RunProjectInput,
   RuntimeStatus,
   SaveMcpServerInput,
@@ -95,6 +97,10 @@ const api: KapyApi = {
     ipcRenderer.invoke('kapy:project:experience:evaluate', projectId) as Promise<GameplayExperienceReport>,
   cancelProjectExperience: (projectId: string) =>
     ipcRenderer.invoke('kapy:project:experience:cancel', projectId) as Promise<void>,
+  peekProjectUndo: (projectId: string) =>
+    ipcRenderer.invoke('kapy:project:undo:peek', projectId) as Promise<ProjectUndoPreview | null>,
+  undoProjectChange: (projectId: string) =>
+    ipcRenderer.invoke('kapy:project:undo', projectId) as Promise<ProjectUndoResult>,
   readProjectFile: (projectId: string, relativePath: string) =>
     ipcRenderer.invoke('kapy:project:read', projectId, relativePath) as Promise<FileReadResult>,
   getProjectIcon: (projectId: string) =>

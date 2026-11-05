@@ -33,10 +33,10 @@ interface CrewRoleOption {
 }
 
 export const KAPY_CREW_ROLE_OPTIONS: readonly CrewRoleOption[] = [
-  { id: 'planner', label: '策划', eyebrow: 'PLANNER', detail: '需求与玩法', icon: ListChecks },
-  { id: 'artist', label: '画师', eyebrow: 'ARTIST', detail: '美术与动效', icon: Brush },
-  { id: 'engineer', label: '工程师', eyebrow: 'ENGINEER', detail: '代码与构建', icon: Code2 },
-  { id: 'tester', label: '测试员', eyebrow: 'TESTER', detail: '试玩与验收', icon: ShieldCheck },
+  { id: 'planner', label: '策划', eyebrow: '岗位 01', detail: '需求与玩法', icon: ListChecks },
+  { id: 'artist', label: '画师', eyebrow: '岗位 02', detail: '美术与动效', icon: Brush },
+  { id: 'engineer', label: '工程师', eyebrow: '岗位 03', detail: '代码与构建', icon: Code2 },
+  { id: 'tester', label: '测试员', eyebrow: '岗位 04', detail: '试玩与验收', icon: ShieldCheck },
 ] as const;
 
 export function toggleKapyCrewMember(

@@ -21,7 +21,7 @@ export function AssetRequirement({
         <ImagePlus size={variant === 'full' ? 18 : 14} />
       </span>
       <span className="asset-requirement-copy">
-        {variant !== 'chip' ? <small>IMAGE ROUTER / REQUIRED</small> : null}
+        {variant !== 'chip' ? <small>图像生成 / 必需</small> : null}
         <strong>
           {variant === 'chip'
             ? (imageGenerationAvailable ? '图片生成就绪' : '图片生成受阻')
@@ -33,7 +33,7 @@ export function AssetRequirement({
       </span>
       <span className="asset-requirement-status" title={imageGenerationAvailable ? '图像生成路由可用' : '图像 API 与 Codex ImageGen 均不可用'}>
         <StatusIcon size={12} aria-hidden="true" />
-        {imageGenerationAvailable ? 'READY' : 'BLOCKED'}
+        {imageGenerationAvailable ? '就绪' : '受阻'}
       </span>
     </section>
   );

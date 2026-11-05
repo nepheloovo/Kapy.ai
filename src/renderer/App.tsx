@@ -2,6 +2,7 @@ import {
   FolderOpen,
   Menu,
   Settings,
+  Undo2,
   X,
 } from 'lucide-react';
 import {
@@ -24,6 +25,7 @@ import type {
   BootstrapPayload,
   EnvironmentStatusSnapshot,
   ProjectRecord,
+  ProjectUndoPreview,
   RuntimeStatus,
   UiSkinId,
 } from '../shared/contracts';
@@ -85,6 +87,8 @@ export function App() {
   const [homeRailCollapsed, setHomeRailCollapsed] = useState(false);
   const [error, setError] = useState('');
   const [refreshSignal, setRefreshSignal] = useState(0);
+  const [undoPreview, setUndoPreview] = useState<ProjectUndoPreview | null>(null);
+  const [undoing, setUndoing] = useState(false);
   const [loadingError, setLoadingError] = useState('');
   const [renameTarget, setRenameTarget] = useState<ProjectRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProjectRecord | null>(null);
@@ -137,6 +141,20 @@ export function App() {
       // Environment status is advisory; ignore read failures.
     }
   }, []);
+
+  // Ask which change "回到上一版" would undo whenever the selected game's
+  // state changes (a run starts or finishes, or an undo happened).
+  useEffect(() => {
+    if (!selected || selected.status === 'running') {
+      setUndoPreview(null);
+      return;
+    }
+    let cancelled = false;
+    window.kapy.peekProjectUndo(selected.id)
+      .then((preview) => { if (!cancelled) setUndoPreview(preview); })
+      .catch(() => { if (!cancelled) setUndoPreview(null); });
+    return () => { cancelled = true; };
+  }, [selected?.id, selected?.status, selected?.updatedAt, refreshSignal]);
 
   useEffect(() => {
     void loadBootstrap();
@@ -373,6 +391,25 @@ export function App() {
     }
   }
 
+  async function undoLastChange() {
+    if (!selected || !undoPreview || selected.status === 'running') return;
+    const confirmed = window.confirm(
+      `撤回“${undoPreview.label}”这次修改？\n\n游戏文件会恢复到这次修改之前的样子。撤回前的版本也会自动保存，不会丢。`,
+    );
+    if (!confirmed) return;
+    setError('');
+    setUndoing(true);
+    try {
+      const result = await window.kapy.undoProjectChange(selected.id);
+      setProjects((current) => upsertProject(current, result.project));
+      setRefreshSignal((value) => value + 1);
+    } catch (reason) {
+      setError(toMessage(reason));
+    } finally {
+      setUndoing(false);
+    }
+  }
+
   async function stopProject() {
     if (!selected) return;
     try {
@@ -469,7 +506,7 @@ export function App() {
     return (
       <main className="loading-screen">
         <div className="loading-brand">
-          <div><strong>Kapy.ai</strong><small>GAME PRODUCTION SYSTEM</small></div>
+          <div><strong>Kapy.ai</strong><small>游戏制作系统</small></div>
         </div>
         {loadingError ? (
           <div className="loading-error" role="alert">
@@ -545,7 +582,7 @@ export function App() {
           </button>
 
           <div className="topbar-project">
-            <strong>{selected?.name ?? 'Kapy.ai Workspace'}</strong>
+            <strong>{selected?.name ?? 'Kapy.ai 工作台'}</strong>
             {selected ? (
               <>
                 <span className={`engine-chip engine-${selected.engine}`}>
@@ -569,6 +606,18 @@ export function App() {
             >
               <FolderOpen size={15} />
             </button>
+            <button
+              className="icon-button"
+              type="button"
+              aria-label="回到上一版"
+              title={undoPreview
+                ? `回到上一版：撤回“${undoPreview.label}”`
+                : '还没有可以撤回的修改'}
+              disabled={!selected || !undoPreview || undoing || selected.status === 'running'}
+              onClick={() => void undoLastChange()}
+            >
+              <Undo2 size={15} />
+            </button>
             <SkinSwitcher value={settings.uiSkin} onChange={(skin) => void changeSkin(skin)} />
             <button
               className="icon-button"
@@ -587,7 +636,7 @@ export function App() {
             <section className="production-center">
               <header className="agent-pane-heading">
                 <div>
-                  <span>KAPY AGENT</span>
+                  <span>Kapy 制作助手</span>
                   <button
                     className="agent-project-name"
                     type="button"

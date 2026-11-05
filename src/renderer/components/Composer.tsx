@@ -7,6 +7,7 @@ import type {
   ProjectRecord,
 } from '../../shared/contracts';
 import { AssetRequirement } from './AssetRequirement';
+import { effortDisplayLabel } from './ModelPicker';
 
 interface ComposerProps {
   project: ProjectRecord;
@@ -152,8 +153,8 @@ export function Composer({
             {running
               ? (queuedRun ? '下一条要求已排队' : '正在制作，可先输入下一条要求')
               : (project.threadId
-                  ? `THREAD ${project.threadId.slice(0, 8).toUpperCase()}`
-                  : 'NEW THREAD')}
+                  ? `制作记录 ${project.threadId.slice(0, 8).toUpperCase()}`
+                  : '新对话')}
           </span>
         </div>
         <textarea
@@ -212,7 +213,7 @@ export function Composer({
               >
                 {(activeModel?.efforts ?? [settings.defaultEffort]).map((item) => (
                   <option value={item} key={item}>
-                    {item.toUpperCase()}
+                    {`推理 · ${effortDisplayLabel(item)}`}
                   </option>
                 ))}
               </select>

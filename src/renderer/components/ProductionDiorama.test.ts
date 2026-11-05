@@ -114,7 +114,7 @@ describe('Kapy ground shadow profiles', () => {
     expect(markup).toContain('data-runtime-scene="fishing"');
     expect(markup).toContain('data-scene-mode="fishing"');
     expect(markup).toContain('four-ip-fishing.gif');
-    expect(markup).toContain('KAPY WORKING');
+    expect(markup).toContain('Kapy 制作中');
     expect(markup).not.toContain('class="workshop-occluder"');
     expect(markup).not.toContain('data-kapy-member-pack=');
     expect(markup).not.toContain('data-crew-role=');

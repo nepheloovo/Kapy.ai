@@ -18,7 +18,7 @@ export function LaunchTransition({ phase }: LaunchTransitionProps) {
       aria-label="正在进入游戏制作工作台"
     >
       <div className="launch-transition-copy">
-        <strong>正在建立 New Game</strong>
+        <strong>正在建立新游戏</strong>
         <span>Kapy 正把创意送进制作工作台</span>
       </div>
       <div className="launch-transition-track" aria-hidden="true">

@@ -29,7 +29,7 @@ export const KAPY_PACK_OPTIONS: readonly KapyPackOption[] = [
   {
     id: 'classic',
     name: '经典工坊',
-    eyebrow: 'CLASSIC STUDIO',
+    eyebrow: '形象包 · 01',
     description: '暖木工作室与卡皮巴拉 Kapy，适合大多数游戏制作任务。',
     avatarLabel: '卡皮巴拉 Kapy',
     avatarDescription: '热情、可靠的全能制作伙伴，适合陪你完成第一款游戏。',
@@ -40,7 +40,7 @@ export const KAPY_PACK_OPTIONS: readonly KapyPackOption[] = [
   {
     id: 'mosslight',
     name: '苔光工坊',
-    eyebrow: 'MOSSLIGHT ATELIER',
+    eyebrow: '形象包 · 02',
     description: '植物、琥珀灯与游侠伙伴，适合自然和冒险题材。',
     avatarLabel: '苔光游侠',
     avatarDescription: '安静敏锐的自然系伙伴，擅长探索、地图与冒险题材。',
@@ -51,7 +51,7 @@ export const KAPY_PACK_OPTIONS: readonly KapyPackOption[] = [
   {
     id: 'starforge',
     name: '星铸工坊',
-    eyebrow: 'STARFORGE LAB',
+    eyebrow: '形象包 · 03',
     description: '星舰机械间与工程师伙伴，适合科幻和 3D 项目。',
     avatarLabel: '星铸工程师',
     avatarDescription: '喜欢机械与调试的工程伙伴，适合科幻、系统和 3D 项目。',
@@ -62,7 +62,7 @@ export const KAPY_PACK_OPTIONS: readonly KapyPackOption[] = [
   {
     id: 'twilight',
     name: '暮光魔法工坊',
-    eyebrow: 'TWILIGHT MAGIC LAB',
+    eyebrow: '形象包 · 04',
     description: '小马宝莉·暮光闪闪与魔法研究室，适合解谜、叙事和奇幻冒险。',
     avatarLabel: '小马宝莉·暮光闪闪',
     avatarDescription: '专注研究与魔法推演的伙伴，适合解谜、叙事和奇幻冒险。',
@@ -73,7 +73,7 @@ export const KAPY_PACK_OPTIONS: readonly KapyPackOption[] = [
   {
     id: 'hellokitty',
     name: 'Hello Kitty 工坊',
-    eyebrow: 'HELLO KITTY STUDIO',
+    eyebrow: '形象包 · 05',
     description: 'Hello Kitty 与草莓创意室，适合休闲、装扮和温馨题材。',
     avatarLabel: 'Hello Kitty',
     avatarDescription: '温柔细致的创意伙伴，适合休闲、装扮与治愈题材。',
@@ -163,7 +163,7 @@ export function KapyPackPicker({
         ...KAPY_PACK_OPTIONS.find((option) => option.id === globalValue)!,
         id: globalValue,
         name: `跟随全局 · ${kapyPackLabel(globalValue)}`,
-        eyebrow: 'FOLLOW GLOBAL',
+        eyebrow: '跟随全局设置',
         description: '项目会自动使用设置中的全局默认主题包。',
         inherited: true,
       }, ...KAPY_PACK_OPTIONS]
@@ -241,7 +241,7 @@ export function KapyPackPicker({
               {option.inherited ? <Sparkles className="kapy-pack-follow-icon" size={17} /> : null}
             </span>
             <span className="kapy-pack-card-copy">
-              <small>{presentation === 'character' ? 'KAPY CHARACTER' : option.eyebrow}</small>
+              <small>{presentation === 'character' ? 'Kapy 形象' : option.eyebrow}</small>
               <strong>{presentation === 'character' ? option.avatarLabel : option.name}</strong>
               <span>{presentation === 'character' ? option.avatarDescription : option.description}</span>
             </span>

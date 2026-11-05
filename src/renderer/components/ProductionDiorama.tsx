@@ -97,16 +97,16 @@ export function ProductionDiorama({
   const activeActor = actorSnapshots[activeMember.role] ?? initialCrewActor(activeMember);
   const visibleEgg = activeActor.easterEgg;
   const statusLabel = status === 'running'
-    ? 'KAPY WORKING'
+    ? 'Kapy 制作中'
     : status === 'completed'
-      ? 'READY TO PLAY'
+      ? '可以玩了'
       : status === 'waiting'
-        ? 'WAITING FOR YOU'
+        ? '等你处理'
         : status === 'draft'
-          ? 'TAKING A BREAK'
+          ? '休息中'
           : status === 'stopped'
-            ? 'PAUSED'
-            : 'NEEDS A HAND';
+            ? '已暂停'
+            : '需要帮忙';
 
   return (
     <section

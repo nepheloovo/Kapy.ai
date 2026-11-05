@@ -418,7 +418,7 @@ export function HomeDashboard({
         <section className="home-projects" aria-labelledby="recent-projects-title">
           <header>
             <div>
-              <span>YOUR GAMES</span>
+              <span>你的游戏</span>
               <h2 id="recent-projects-title">继续最近的制作</h2>
             </div>
             <button

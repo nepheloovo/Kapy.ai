@@ -57,9 +57,9 @@ export function formatRelative(value: string): string {
   if (!Number.isFinite(time)) return '—';
   const delta = Math.max(0, Date.now() - time);
   if (delta < 60_000) return '刚刚';
-  if (delta < 3_600_000) return `${Math.floor(delta / 60_000)}m`;
-  if (delta < 86_400_000) return `${Math.floor(delta / 3_600_000)}h`;
-  return `${Math.floor(delta / 86_400_000)}d`;
+  if (delta < 3_600_000) return `${Math.floor(delta / 60_000)} 分钟前`;
+  if (delta < 86_400_000) return `${Math.floor(delta / 3_600_000)} 小时前`;
+  return `${Math.floor(delta / 86_400_000)} 天前`;
 }
 
 export function toMessage(error: unknown): string {

@@ -48,7 +48,7 @@ export function EventStream({ project, events }: EventStreamProps) {
   return (
     <div className="event-stream" ref={streamRef} aria-live="polite">
       <article className="brief-card">
-        <span className="eyebrow">01 / CREATIVE BRIEF</span>
+        <span className="eyebrow">01 / 创意简报</span>
         <h2>{project.name}</h2>
         <p>{project.idea}</p>
         <footer>
@@ -134,7 +134,7 @@ export function EventStream({ project, events }: EventStreamProps) {
       {project.status === 'running' ? (
         <div className="live-indicator">
           <span className="pulse" />
-          CODEX TURN ACTIVE
+          AI 正在工作
         </div>
       ) : null}
     </div>

@@ -124,7 +124,7 @@ export function EnvironmentSettings({ onMessage }: EnvironmentSettingsProps) {
     <section className="environment-settings" aria-busy={busy !== null}>
       <header className="settings-page-heading environment-heading">
         <div>
-          <span>GAME TOOLCHAIN / LOCAL HOST</span>
+          <span>游戏工具链 / 本机</span>
           <h3>环境管理</h3>
           <p>检查游戏生产所需的本地工具。Kapy 只使用已经确认的可执行文件，不把环境路径交给 Agent 猜测。</p>
         </div>
@@ -199,7 +199,7 @@ export function EnvironmentSettings({ onMessage }: EnvironmentSettingsProps) {
           <header>
             <div className="export-templates-icon"><Boxes size={18} /></div>
             <div>
-              <span>GODOT / EXPORT TEMPLATES</span>
+              <span>Godot / 导出模板</span>
               <strong>多平台导出模板</strong>
               <small>{exportTemplateDescription(snapshot)}</small>
             </div>
@@ -228,7 +228,7 @@ export function EnvironmentSettings({ onMessage }: EnvironmentSettingsProps) {
                 <div className={available ? 'is-ready' : 'is-missing'} key={id}>
                   {available ? <Check size={13} /> : <CircleX size={13} />}
                   <span>{label}</span>
-                  <small>{available ? 'READY' : 'MISSING'}</small>
+                  <small>{available ? '就绪' : '缺失'}</small>
                 </div>
               );
             })}
@@ -236,11 +236,11 @@ export function EnvironmentSettings({ onMessage }: EnvironmentSettingsProps) {
 
           <dl className="export-template-meta">
             <div>
-              <dt>Required</dt>
+              <dt>需要版本</dt>
               <dd>{snapshot.exportTemplates.expectedVersion ?? '等待 Godot 版本检查'}</dd>
             </div>
             <div>
-              <dt>Installed</dt>
+              <dt>已安装</dt>
               <dd>
                 {snapshot.exportTemplates.installedVersions.length
                   ? snapshot.exportTemplates.installedVersions.join(' / ')
@@ -248,13 +248,13 @@ export function EnvironmentSettings({ onMessage }: EnvironmentSettingsProps) {
               </dd>
             </div>
             <div>
-              <dt>Base path</dt>
+              <dt>根目录</dt>
               <dd title={snapshot.exportTemplates.basePath ?? undefined}>
                 {snapshot.exportTemplates.basePath ?? '尚未定位模板目录'}
               </dd>
             </div>
             <div>
-              <dt>Version path</dt>
+              <dt>版本目录</dt>
               <dd title={snapshot.exportTemplates.versionPath ?? undefined}>
                 {snapshot.exportTemplates.versionPath ?? '当前 Godot 版本没有匹配模板'}
               </dd>
@@ -315,11 +315,11 @@ function ToolCard({
         <p>{TOOL_DESCRIPTIONS[tool.id]}</p>
         <div className="environment-tool-facts">
           <div>
-            <span>VERSION</span>
-            <strong>{tool.version ?? 'UNKNOWN'}</strong>
+            <span>版本</span>
+            <strong>{tool.version ?? '未知'}</strong>
           </div>
           <div>
-            <span>SOURCE</span>
+            <span>来源</span>
             <strong>{sourceLabel(tool.source)}</strong>
           </div>
         </div>
@@ -339,7 +339,7 @@ function CapabilityItem({ ready, label, detail }: { ready: boolean; label: strin
     <div className={ready ? 'is-ready' : 'is-blocked'}>
       <span>{ready ? <Check size={13} /> : <CircleX size={13} />}</span>
       <div><strong>{label}</strong><small>{detail}</small></div>
-      <code>{ready ? 'PASS' : 'BLOCKED'}</code>
+      <code>{ready ? '通过' : '受阻'}</code>
     </div>
   );
 }
@@ -369,7 +369,7 @@ export function environmentSummary(
   if (loading || !snapshot) {
     return {
       tone: 'checking',
-      code: 'ENV / SCANNING',
+      code: '环境 / 检测中',
       title: '正在读取本机工具链',
       detail: '检查 Codex、Node.js、Godot 与导出模板。',
     };
@@ -377,7 +377,7 @@ export function environmentSummary(
   if (snapshot.state === 'ready') {
     return {
       tone: 'ready',
-      code: 'ENV / OPERATIONAL',
+      code: '环境 / 正常',
       title: '游戏生产环境已就绪',
       detail: snapshot.canExportGodotProjects
         ? 'Godot 项目创建、验证和多平台导出均可使用。'
@@ -387,14 +387,14 @@ export function environmentSummary(
   if (snapshot.state === 'blocked') {
     return {
       tone: 'blocked',
-      code: 'ENV / BLOCKED',
+      code: '环境 / 受阻',
       title: '关键工具缺失或不兼容',
       detail: '请处理下方红色项目，再启动 Godot 游戏 Agent。',
     };
   }
   return {
     tone: 'attention',
-    code: 'ENV / ATTENTION',
+    code: '环境 / 需注意',
     title: '环境可以运行，但仍需完善',
     detail: '下方项目不会阻止基础制作，但可能限制验证或导出。',
   };
@@ -441,12 +441,12 @@ function exportTemplateDescription(snapshot: EnvironmentStatusSnapshot): string 
 }
 
 function sourceLabel(source: EnvironmentToolStatus['source']): string {
-  return source ? source.replaceAll('-', ' ').toUpperCase() : 'AUTO DISCOVERY';
+  return source ? source.replaceAll('-', ' ').toUpperCase() : '自动查找';
 }
 
 function formatCheckedAt(value: string): string {
   const date = new Date(value);
-  if (Number.isNaN(date.valueOf())) return 'CHECKED';
+  if (Number.isNaN(date.valueOf())) return '已检查';
   return `CHECKED ${new Intl.DateTimeFormat('zh-CN', {
     hour: '2-digit',
     minute: '2-digit',

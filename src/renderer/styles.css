@@ -11409,3 +11409,12 @@ a {
     8px 8px 0 2px var(--skin-drop),
     0 30px 80px rgba(0, 0, 0, 0.22);
 }
+
+/* Chinese brand subtitle: use the pixel face that has Chinese glyphs so the
+   whole label renders in one pixel style instead of mixing two fonts. */
+.brand-copy small {
+  font-family: var(--pixel-cjk);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  -webkit-font-smoothing: none;
+}

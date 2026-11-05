@@ -35,10 +35,10 @@ interface InputQuestion {
 }
 
 const KIND_LABELS: Record<ApprovalRequest['kind'], string> = {
-  command: 'COMMAND APPROVAL',
-  file: 'FILE CHANGE APPROVAL',
-  permissions: 'PERMISSION APPROVAL',
-  input: 'USER INPUT',
+  command: '命令审批',
+  file: '文件修改审批',
+  permissions: '权限审批',
+  input: '需要你回答',
 };
 
 export function ApprovalModal({
@@ -143,7 +143,7 @@ export function ApprovalModal({
       <div className="approval-context">
         <ShieldAlert size={20} />
         <div>
-          <span>RUNTIME REQUEST</span>
+          <span>运行时请求</span>
           <p>{approval.summary}</p>
         </div>
       </div>
@@ -183,13 +183,13 @@ export function ApprovalModal({
         </div>
       ) : null}
       <dl className="approval-meta">
-        <div><dt>Method</dt><dd>{approval.method}</dd></div>
-        <div><dt>Project</dt><dd>{approval.projectId ?? 'GLOBAL'}</dd></div>
-        <div><dt>Created</dt><dd>{new Date(approval.createdAt).toLocaleTimeString('zh-CN', { hour12: false })}</dd></div>
+        <div><dt>请求类型</dt><dd>{approval.method}</dd></div>
+        <div><dt>项目</dt><dd>{approval.projectId ?? '全局'}</dd></div>
+        <div><dt>创建时间</dt><dd>{new Date(approval.createdAt).toLocaleTimeString('zh-CN', { hour12: false })}</dd></div>
       </dl>
       {details && details !== '{}' ? (
         <div className="approval-details">
-          <span>SAFE REQUEST DETAILS</span>
+          <span>请求详情（已隐去敏感信息）</span>
           <pre>{details}</pre>
         </div>
       ) : null}

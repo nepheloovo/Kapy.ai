@@ -301,7 +301,7 @@ export function SettingsModal({
               >
                 <header className="kapy-mode-panel-heading">
                   <div>
-                    <small>SOLO / DEFAULT</small>
+                    <small>单人 / 默认</small>
                     <strong>一位搭档，一个工作室</strong>
                     <p>角色和场景分别选择，可以自由组合；选择任一项都会把单人模式设为默认。</p>
                   </div>
@@ -314,7 +314,7 @@ export function SettingsModal({
                   <header className="kapy-setup-step-heading">
                     <span aria-hidden="true">01</span>
                     <div>
-                      <small>SOLO PARTNER</small>
+                      <small>单人搭档</small>
                       <strong id="kapy-character-step-title">先选择一位默认角色</strong>
                       <p>这位 Kapy 会独自出现在制作预览里，并跟随 Agent 的阶段行动。</p>
                     </div>
@@ -354,7 +354,7 @@ export function SettingsModal({
               >
                 <header className="kapy-mode-panel-heading">
                   <div>
-                    <small>MULTIPLAYER / OPTIONAL</small>
+                    <small>多人 / 可选</small>
                     <strong>需要时，再组建多人编队</strong>
                     <p>先配置 2–4 位伙伴的岗位，再在最下方选择一个多人舞台。</p>
                   </div>
@@ -469,23 +469,23 @@ function AccountSettings({
           <span className={`runtime-dot state-${runtime.state}`} />
           <div>
             <strong>{runtimeLabel(runtime)}</strong>
-            <small>{runtime.version ?? 'VERSION UNKNOWN'}</small>
+            <small>{runtime.version ?? '版本未知'}</small>
           </div>
         </div>
         {runtime.error ? <p className="runtime-error">{runtime.error}</p> : null}
         <dl>
-          <div><dt>Binary</dt><dd>{runtime.binaryPath ?? '尚未定位'}</dd></div>
-          <div><dt>Codex Home</dt><dd>{runtime.codexHome ?? '尚未启动'}</dd></div>
-          <div><dt>Models</dt><dd>{runtime.models.length}</dd></div>
-          <div><dt>Image route</dt><dd>{runtime.capabilities.externalImageGeneration ? '外部 API 优先' : runtime.capabilities.imageGeneration ? 'Codex ImageGen' : '当前不可用'}</dd></div>
-          <div><dt>Media tools</dt><dd>{runtime.state === 'ready' ? '素材库 / 音效已接入' : '等待运行时'}</dd></div>
+          <div><dt>程序路径</dt><dd>{runtime.binaryPath ?? '尚未定位'}</dd></div>
+          <div><dt>Codex 目录</dt><dd>{runtime.codexHome ?? '尚未启动'}</dd></div>
+          <div><dt>模型</dt><dd>{runtime.models.length}</dd></div>
+          <div><dt>图像通道</dt><dd>{runtime.capabilities.externalImageGeneration ? '外部 API 优先' : runtime.capabilities.imageGeneration ? 'Codex ImageGen' : '当前不可用'}</dd></div>
+          <div><dt>媒体工具</dt><dd>{runtime.state === 'ready' ? '素材库 / 音效已接入' : '等待运行时'}</dd></div>
         </dl>
       </div>
 
       <div className="account-card">
         <div className="account-icon"><SquareTerminal size={20} /></div>
         <div className="account-copy">
-          <span>CHATGPT / CODEX ACCOUNT</span>
+          <span>ChatGPT / Codex 账户</span>
           <strong>{runtime.account?.email ?? '尚未登录'}</strong>
           <small>{runtime.account?.planType ?? runtime.account?.type ?? '使用 ChatGPT 账号授权 Codex'}</small>
         </div>
