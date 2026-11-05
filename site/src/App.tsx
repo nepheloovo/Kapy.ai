@@ -764,7 +764,7 @@ function StickerField() {
       const cellY = Math.floor(cell / 4);
       const dx = ((pointer.x / Math.max(1, window.innerWidth)) * 2 - 1) * (index % 2 ? -6 : 6);
       const dy = ((pointer.y / Math.max(1, window.innerHeight)) * 2 - 1) * (index % 3 ? 3 : -3);
-      return <button ref={(node) => { stickerRefs.current[index] = node; }} key={index} className={`sticker sticker-${index} ${active === index ? 'is-popping' : ''}`} type="button" aria-label={`Sticker ${index + 1}`} onClick={() => { setActive(index); window.setTimeout(() => setActive(null), 380); }} style={{ left: `${left}%`, top: `${top}%`, backgroundPosition: `${cellX * 33.333333}% ${cellY * 50}%`, transform: `translate3d(${dx}px, ${dy}px, 0) rotate(${rotate}deg)` }} />;
+      return <button ref={(node) => { stickerRefs.current[index] = node; }} key={index} className={`sticker sticker-${index} ${active === index ? 'is-popping' : ''}`} type="button" aria-label={`Sticker ${index + 1}`} onClick={() => { setActive(index); window.setTimeout(() => setActive(null), 380); }} style={{ backgroundImage: `url(${asset}stickers/sticker-sheet.png)`, left: `${left}%`, top: `${top}%`, backgroundPosition: `${cellX * 33.333333}% ${cellY * 50}%`, transform: `translate3d(${dx}px, ${dy}px, 0) rotate(${rotate}deg)` }} />;
     })}
   </div>;
 }

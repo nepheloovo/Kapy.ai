@@ -218,7 +218,7 @@ img { max-width: 100%; display: block; }
 .cta-actions { display: flex; gap: 10px; margin-top: 3vh; }
 .cta-scroll { position: absolute; z-index: 5; bottom: 4vh; font: 11px/1 'Geist Mono', monospace; letter-spacing: .06em; color: rgba(241,240,235,.55); }
 .sticker-field { position: absolute; inset: 0; z-index: 2; pointer-events: auto; }
-.sticker { position: absolute; width: clamp(64px, 9vw, 150px); aspect-ratio: 1; padding: 0; background-image: url('./assets/stickers/sticker-sheet.png'); background-size: 400% 300%; background-repeat: no-repeat; image-rendering: pixelated; transform-origin: center; transition: transform .6s var(--ease-out), filter .4s ease; filter: drop-shadow(0 8px 10px rgba(0,0,0,.28)); }
+.sticker { position: absolute; width: clamp(64px, 9vw, 150px); aspect-ratio: 1; padding: 0; background-size: 400% 300%; background-repeat: no-repeat; image-rendering: pixelated; transform-origin: center; transition: transform .6s var(--ease-out), filter .4s ease; filter: drop-shadow(0 8px 10px rgba(0,0,0,.28)); }
 .sticker:hover { filter: drop-shadow(0 12px 14px rgba(0,0,0,.35)); }
 .sticker.is-popping { animation: sticker-pop .38s var(--ease-out); }
 @keyframes sticker-pop { 0% { scale: 1; } 45% { scale: 1.25; } 100% { scale: 1; } }
