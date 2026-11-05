@@ -1,4 +1,5 @@
-import { appendFile, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { appendFile, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -8,8 +9,10 @@ import {
   KAPY_HOST_RUNTIME_POLICY_START,
   KAPY_HOST_RUNTIME_POLICY_VERSION,
   synchronizeGodotPresentationPolicy,
+  synchronizeGodotReference,
   synchronizeWorkspaceHostPolicy,
 } from './workspaceTemplate.js';
+import { GODOT_REFERENCE_FILES } from '../generated/godotReference.js';
 
 const temporaryRoots: string[] = [];
 
@@ -496,3 +499,73 @@ function withoutManagedPolicy(source: string): string {
     result = result.slice(0, start) + result.slice(end + KAPY_HOST_RUNTIME_POLICY_END.length);
   }
 }
+
+describe('Godot API reference', () => {
+  const godotProject = {
+    id: 'project-godot-reference',
+    name: 'Reference Garden',
+    idea: 'A small Godot platformer.',
+    createdAt: new Date().toISOString(),
+    model: null,
+    targetFrameRate: 60 as const,
+    engine: 'godot' as const,
+  };
+
+  it('keeps the bundled module in sync with resources/godot-reference', () => {
+    expect(() => execFileSync(process.execPath, ['scripts/generate-godot-reference.mjs', '--check'], {
+      stdio: 'pipe',
+    })).not.toThrow();
+    expect(Object.keys(GODOT_REFERENCE_FILES)).toEqual(expect.arrayContaining([
+      'docs/godot-reference/README.md',
+      'docs/godot-reference/VERSION.md',
+      'docs/godot-reference/deprecated-apis.md',
+      'docs/godot-reference/godot-parse-check.gd',
+      'docs/godot-reference/modules/ui.md',
+    ]));
+    for (const content of Object.values(GODOT_REFERENCE_FILES)) {
+      expect(content).not.toMatch(/\.claude\/|setup-engine/u);
+    }
+  });
+
+  it('ships the reference in new Godot workspaces, excludes it from export and points agents at it', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'kapy-godot-reference-'));
+    temporaryRoots.push(root);
+    await createWorkspaceTemplate(root, godotProject);
+
+    for (const [path, content] of Object.entries(GODOT_REFERENCE_FILES)) {
+      await expect(readFile(join(root, path), 'utf8')).resolves.toBe(content);
+    }
+    await expect(readFile(join(root, 'export_presets.cfg'), 'utf8')).resolves.toContain(
+      'exclude_filter="docs/godot-reference/*"',
+    );
+    const agents = await readFile(join(root, 'AGENTS.md'), 'utf8');
+    expect(agents).toContain('docs/godot-reference/deprecated-apis.md');
+    const skill = await readFile(join(root, '.codex/skills/kapy-game-builder/SKILL.md'), 'utf8');
+    expect(skill).toContain('res://docs/godot-reference/godot-parse-check.gd');
+    await expect(synchronizeGodotReference(root)).resolves.toBe(false);
+  });
+
+  it('adds the reference to older Godot workspaces and refreshes outdated copies', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'kapy-godot-reference-sync-'));
+    temporaryRoots.push(root);
+    await mkdir(join(root, 'docs/godot-reference'), { recursive: true });
+    await writeFile(join(root, 'docs/godot-reference/VERSION.md'), 'stale', 'utf8');
+    await writeFile(join(root, 'docs/notes.md'), 'user notes', 'utf8');
+
+    await expect(synchronizeGodotReference(root)).resolves.toBe(true);
+    for (const [path, content] of Object.entries(GODOT_REFERENCE_FILES)) {
+      await expect(readFile(join(root, path), 'utf8')).resolves.toBe(content);
+    }
+    await expect(readFile(join(root, 'docs/notes.md'), 'utf8')).resolves.toBe('user notes');
+    await expect(synchronizeGodotReference(root)).resolves.toBe(false);
+  });
+
+  it('refuses to write through a symbolic link', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'kapy-godot-reference-link-'));
+    const outside = await mkdtemp(join(tmpdir(), 'kapy-godot-reference-outside-'));
+    temporaryRoots.push(root, outside);
+    await symlink(outside, join(root, 'docs'));
+
+    await expect(synchronizeGodotReference(root)).rejects.toThrow(/symbolic link/u);
+  });
+});

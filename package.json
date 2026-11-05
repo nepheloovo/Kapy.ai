@@ -40,6 +40,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "protocol:generate": "tsx scripts/generate-codex-protocol.ts",
+    "godot-reference:generate": "node scripts/generate-godot-reference.mjs",
+    "godot-reference:check": "node scripts/generate-godot-reference.mjs --check",
     "smoke:codex": "tsx scripts/codex-smoke.ts",
     "smoke:harness": "tsx scripts/harness-smoke.ts",
     "smoke:media": "tsx scripts/media-smoke.ts",

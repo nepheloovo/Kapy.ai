@@ -121,6 +121,7 @@ import { verifyVisualAssetCoverage } from './visualAssetCoverage.js';
 import { verifyWebProductionBuild } from './webProductionBuild.js';
 import {
   synchronizeGodotPresentationPolicy,
+  synchronizeGodotReference,
   synchronizeWorkspaceHostPolicy,
 } from './workspaceTemplate.js';
 
@@ -716,6 +717,10 @@ function bindIpc(): void {
         await synchronizeWorkspaceHostPolicy(prepared.root, prepared);
         if (prepared.engine === 'godot') {
           await synchronizeGodotPresentationPolicy(prepared.root);
+          // The API reference helps but must never block a run.
+          await synchronizeGodotReference(prepared.root).catch((error) => {
+            console.warn(`Godot reference sync skipped: ${asError(error).message}`);
+          });
         }
       } catch (error) {
         const message = `无法同步游戏引擎展示策略：${asError(error).message}`;

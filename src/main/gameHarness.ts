@@ -239,6 +239,8 @@ For every requested 3D model, call kapy_model3d_generate. The host automatically
 otherwise authors a self-contained procedural GLB with Three.js. Use the returned registered GLB in the final game;
 Three.js is build-time asset tooling only and must never become a second runtime beside Godot. Keep every asset
 referenced by the running game and asset-pack.json.
+In a Godot project, check docs/godot-reference/deprecated-apis.md and the relevant modules/*.md before writing engine
+API calls (model knowledge stops around Godot 4.3), and parse-check changed GDScript with its godot-parse-check.gd.
 Maintain \`.kapy/playtest.json\` using the fixed playtest schema in the host contract. It is an executable player
 journey, not prose: keep the production entrypoint, common action inputs, ordered steps, safe visual/DOM
 observations, time limits, and success/failure/restart checks aligned with the game after every control or gameplay

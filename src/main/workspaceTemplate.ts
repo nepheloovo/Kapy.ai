@@ -12,6 +12,7 @@ import {
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import type { ProjectRecord } from '../shared/contracts.js';
 import { isTargetFrameRate } from '../shared/contracts.js';
+import { GODOT_REFERENCE_DIRECTORY, GODOT_REFERENCE_FILES } from '../generated/godotReference.js';
 
 export type WorkspaceProject = Pick<
   ProjectRecord,
@@ -147,6 +148,32 @@ export async function synchronizeGodotPresentationPolicy(workspaceRoot: string):
   return projectContent !== projectFile.content || exportContent !== exportFile.content;
 }
 
+/**
+ * Writes the bundled Godot 4.4–4.7 API reference into a Godot workspace.
+ * Missing files are created and outdated copies are replaced; the directory is
+ * host-managed, and its README says so. Returns true when anything changed.
+ */
+export async function synchronizeGodotReference(workspaceRoot: string): Promise<boolean> {
+  const root = await canonicalWorkspaceRoot(workspaceRoot);
+  let changed = false;
+  for (const [relativePath, content] of Object.entries(GODOT_REFERENCE_FILES)) {
+    let existing: SafeWorkspaceFile | null = null;
+    try {
+      existing = await readSafeWorkspaceFile(root, relativePath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+    if (!existing) {
+      await createSafeWorkspaceFile(root, relativePath, content);
+      changed = true;
+    } else if (existing.content !== content) {
+      await atomicallyReplaceSafeWorkspaceFile(root, existing, content);
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 function workspaceFiles(project: WorkspaceProject): Record<string, string> {
   const packageName = packageSlug(project.name);
   const safeTitle = escapeHtml(project.name);
@@ -191,6 +218,7 @@ function workspaceFiles(project: WorkspaceProject): Record<string, string> {
       [KAPY_GODOT_ICON_PATH]: KAPY_GODOT_ICON_SVG,
       'scenes/main.tscn': godotMainScene(),
       'scripts/main.gd': godotMainScript(project),
+      ...GODOT_REFERENCE_FILES,
     };
   }
 
@@ -445,6 +473,7 @@ function engineContract(project: WorkspaceProject): string {
       '- Keep imported image, audio, and self-contained GLB assets under public/assets/ so the Kapy host can attest and inventory them; reference them from Godot with res://public/assets/... paths.',
       '- Keep the Compatibility renderer and a single-threaded Web preset for the embedded Kapy preview. Advanced desktop-only rendering must have a native export acceptance check.',
       '- Keep `application/boot_splash/show_image=false` and the Web export icon disabled so generated games never display Godot engine branding while loading.',
+      `- Model knowledge of Godot usually stops around 4.3. Before writing engine API calls, check \`${GODOT_REFERENCE_DIRECTORY}/deprecated-apis.md\` and the relevant \`${GODOT_REFERENCE_DIRECTORY}/modules/*.md\`; read \`${GODOT_REFERENCE_DIRECTORY}/README.md\` once for the full workflow. Run \`godot --version\` and follow the installed editor when it is older than the reference.`,
       '- Validate with headless import, a bounded headless scene smoke, and a Web export. A zero exit code without expected output files or with Godot ERROR/export-failed diagnostics is not a pass.',
       '- Real character animation uses AnimatedSprite2D, AnimationPlayer, AnimationTree, skeleton clips, or morph tracks. Moving a static sprite or whole mesh is not animation proof.',
     ].join('\n');
@@ -458,7 +487,7 @@ function engineContract(project: WorkspaceProject): string {
 function verificationChecklist(project: WorkspaceProject): string {
   if (project.engine === 'godot') {
     return [
-      '1. parse changed GDScript and inspect scene/resource references;',
+      `1. after godot --headless --path . --import, parse-check changed GDScript with godot --headless --path . -s res://${GODOT_REFERENCE_DIRECTORY}/godot-parse-check.gd -- res://<changed>.gd (exit 0 required) and inspect scene/resource references;`,
       '2. run godot --headless --path . --editor --quit and reject any ERROR diagnostics;',
       '3. run a bounded headless scene smoke covering load, input/state transitions, progress, win/loss, and restart;',
       '4. run godot --headless --path . --export-release Web build/web/index.html and verify the HTML, WASM, PCK, and JavaScript artifacts exist;',
@@ -564,7 +593,7 @@ function godotExportPresets(): string {
     'custom_features=""',
     'export_filter="all_resources"',
     'include_filter=""',
-    'exclude_filter=""',
+    `exclude_filter="${GODOT_REFERENCE_DIRECTORY}/*"`,
     'export_path="build/web/index.html"',
     'script_export_mode=2',
     '',
@@ -1282,6 +1311,40 @@ async function assertNoSymlinkComponents(
   }
   if (!currentInfo) throw new Error(`Workspace host policy path is invalid: ${relativePath}`);
   return currentInfo;
+}
+
+/** Creates a new file without following symbolic links anywhere on its path. */
+async function createSafeWorkspaceFile(
+  root: string,
+  relativePath: string,
+  content: string,
+): Promise<void> {
+  const target = resolveTemplatePath(root, relativePath);
+  const segments = relativePath.split('/');
+  let current = root;
+  for (const segment of segments.slice(0, -1)) {
+    current = resolve(current, segment);
+    try {
+      const info = await lstat(current);
+      if (info.isSymbolicLink()) {
+        throw new Error(`Workspace host policy path cannot contain a symbolic link: ${relativePath}`);
+      }
+      if (!info.isDirectory()) {
+        throw new Error(`Workspace host policy parent is not a directory: ${relativePath}`);
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      await mkdir(current, { mode: 0o755 });
+    }
+  }
+  const canonicalDirectory = await realpath(dirname(target));
+  assertWorkspaceContained(root, canonicalDirectory, relativePath);
+  const handle = await open(target, WRITE_EXCLUSIVE_NOFOLLOW, 0o644);
+  try {
+    await handle.writeFile(content, 'utf8');
+  } finally {
+    await handle.close();
+  }
 }
 
 async function atomicallyReplaceSafeWorkspaceFile(
